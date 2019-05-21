@@ -30,6 +30,9 @@ public class ExportController {
     @Autowired
     private ClientService clientService;
 
+    @Autowired
+    private FactureService factureService;
+
     @GetMapping("/clients/csv")
     public void clientsCSV(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("text/csv");
