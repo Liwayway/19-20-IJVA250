@@ -51,6 +51,9 @@ public class LigneFacture {
         this.quantite = quantite;
     }
 
+    public Double getSousTotal() {
+        return getArticle().getPrix() * quantite;
+    }
 
 
 }

@@ -1,15 +1,15 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.Client;
+import com.example.demo.entity.Facture;
+import com.example.demo.entity.LigneFacture;
 import com.example.demo.service.*;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletRequest;
@@ -46,7 +46,7 @@ public class ExportController {
         for (Client client : allClients) {
 
             writer.println(client.getId()
-                    +  " ; " +
+                    + " ; " +
                     client.getNom()
                     + " ; "
                     + client.getPrenom() +
@@ -98,11 +98,138 @@ public class ExportController {
 
 
         }
-
-
-
         workbook.write(response.getOutputStream());
         workbook.close();
+    }
+
+    @GetMapping("/clients/{id}/factures/xlsx")
+    public void factureXLSXByClient(@PathVariable("id") Long clientId, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("text/csv");
+        response.setHeader("Content-Disposition", "attachment; filename=\"factures-client-" + clientId + ".xlsx\"");
+        List<Facture> factures = factureService.findAllFacturesClient(clientId);
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Facture");
+        Row headerRow = sheet.createRow(0);
+
+        Cell cellId = headerRow.createCell(0);
+        cellId.setCellValue("Id");
+
+        Cell cellTotal = headerRow.createCell(1);
+        cellTotal.setCellValue("Prix Total");
+
+        int iRow = 1;
+        for (Facture facture : factures) {
+            Row row = sheet.createRow(iRow);
+
+            Cell id = row.createCell(0);
+            id.setCellValue(facture.getId());
+
+            Cell prenom = row.createCell(1);
+            prenom.setCellValue(facture.getTotal());
+
+            iRow = iRow + 1;
+        }
+        workbook.write(response.getOutputStream());
+        workbook.close();
+    }
+
+    @GetMapping("/factures/xlsx")
+    public void FacturesExcel(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        response.setContentType("application/vnd.ms-excel\n");
+        response.setHeader("Content-Disposition", "attachment; filename=\"factures.xls\"");
+
+        List<Client> allClients = clientService.findAllClients();
+        Workbook workbook = new XSSFWorkbook();
+
+        //numéro de ligne
+        int iterationClients = 1;
+
+        for (Client client : allClients) {
+
+            Sheet sheet = workbook.createSheet(client.getNom());
+
+
+            //Création des Header de la feuille Client
+            Row headerRow = sheet.createRow(0);
+            Cell cellid = headerRow.createCell(0);
+            cellid.setCellValue("Id");
+            Cell cellPrenom = headerRow.createCell(1);
+            cellPrenom.setCellValue("Prénom");
+            Cell cellNom = headerRow.createCell((2));
+            cellNom.setCellValue("Nom");
+
+            // Remplissage des cellules
+            Row row = sheet.createRow(iterationClients);
+            Cell id = row.createCell(0);
+            id.setCellValue(client.getId());
+
+            Cell prenom = row.createCell(1);
+            prenom.setCellValue(client.getPrenom());
+
+            Cell nom = row.createCell(2);
+            nom.setCellValue(client.getNom());
+
+            List<Facture> facturesDuClient = factureService.findAllFacturesClient(client.getId());
+
+            for (Facture factureClient : facturesDuClient) {
+                //Créer une feuille par factureClient avec comme nom Facture + idFacture
+                Sheet sheetFactureClient = workbook.createSheet("Facture" + factureClient.getId());
+
+                //Créer les headerRow de la feuille
+                Cell cellLibelle = headerRow.createCell(0);
+                cellLibelle.setCellValue("Nom de l'article");
+
+                Cell cellQte = headerRow.createCell(1);
+                cellQte.setCellValue("Quantité commandée");
+
+                Cell cellPU = headerRow.createCell(2);
+                cellPU.setCellValue("Prix unitaire");
+
+                Cell cellPLigne = headerRow.createCell(3);
+                cellPLigne.setCellValue("Prix de la ligne");
+
+                //Récupérer les différents Lignes de factures de la factureClient
+
+                Integer indexLigne = 1;
+
+                for (LigneFacture ligneFacture : factureClient.getLigneFactures()) {
+                    Row ligneFactureRow = sheetFactureClient.createRow(indexLigne);
+
+                    Cell cellArticleLibelle = ligneFactureRow.createCell(0);
+                    cellArticleLibelle.setCellValue(ligneFacture.getArticle().getLibelle());
+
+                    Cell cellQuantite = ligneFactureRow.createCell(1);
+                    cellQuantite.setCellValue(ligneFacture.getQuantite());
+
+                    Cell cellPrixUnitaire = ligneFactureRow.createCell(2);
+                    cellPrixUnitaire.setCellValue(ligneFacture.getArticle().getPrix());
+
+                    Cell cellSousTotal = ligneFactureRow.createCell(3);
+                    cellSousTotal.setCellValue(ligneFacture.getSousTotal());
+
+
+                    Row ligneTotal = sheetFactureClient.createRow(indexLigne);
+                    CellStyle cellStyle = workbook.createCellStyle();
+                    ligneTotal.createCell(1).setCellValue(factureClient.getTotal());
+                    Font police = workbook.createFont();
+                    police.setColor(IndexedColors.RED.getIndex());
+                    police.setBold(true);
+                    cellStyle.setFont(police);
+                    ligneTotal.createCell(0).setCellValue("TOTAL DE LA FACTURE :");
+                    ligneTotal.createCell(1).setCellValue(factureClient.getTotal());
+
+                    indexLigne++;
+                }
+
+            }
+
+            workbook.write(response.getOutputStream());
+            workbook.close();
+
+        }
+
 
     }
 }
