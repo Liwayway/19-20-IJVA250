@@ -11,6 +11,6 @@ import java.util.List;
 @Repository
 public interface FactureRepository extends JpaRepository<Facture, Long> {
 
-    @Query("SELECT f FROM Facture WHERE f.client.id = ?1")
+    @Query("SELECT f FROM Facture f WHERE f.client.id = ?1")
     List<Facture>findByClientId(Long clientId);
 }

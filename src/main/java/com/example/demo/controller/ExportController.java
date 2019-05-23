@@ -33,6 +33,9 @@ public class ExportController {
     @Autowired
     private FactureService factureService;
 
+   /* @Autowired
+    private ExportService exportService;*/
+
     @GetMapping("/clients/csv")
     public void clientsCSV(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("text/csv");
@@ -178,25 +181,29 @@ public class ExportController {
                 Sheet sheetFactureClient = workbook.createSheet("Facture" + factureClient.getId());
 
                 //Créer les headerRow de la feuille
-                Cell cellLibelle = headerRow.createCell(0);
+
+                Row factureRow = sheetFactureClient.createRow(iterationClients);
+                Cell cellLibelle = factureRow.createCell(0);
                 cellLibelle.setCellValue("Nom de l'article");
 
-                Cell cellQte = headerRow.createCell(1);
+                Cell cellQte = factureRow.createCell(1);
                 cellQte.setCellValue("Quantité commandée");
 
-                Cell cellPU = headerRow.createCell(2);
+                Cell cellPU = factureRow.createCell(2);
                 cellPU.setCellValue("Prix unitaire");
 
-                Cell cellPLigne = headerRow.createCell(3);
+                Cell cellPLigne = factureRow.createCell(3);
                 cellPLigne.setCellValue("Prix de la ligne");
 
                 //Récupérer les différents Lignes de factures de la factureClient
 
-                Integer indexLigne = 1;
+                Integer indexLigne = 2;
 
                 for (LigneFacture ligneFacture : factureClient.getLigneFactures()) {
+                    //Pour chaque article créer une ligne
                     Row ligneFactureRow = sheetFactureClient.createRow(indexLigne);
 
+                    //Récupération des données
                     Cell cellArticleLibelle = ligneFactureRow.createCell(0);
                     cellArticleLibelle.setCellValue(ligneFacture.getArticle().getLibelle());
 
@@ -209,27 +216,49 @@ public class ExportController {
                     Cell cellSousTotal = ligneFactureRow.createCell(3);
                     cellSousTotal.setCellValue(ligneFacture.getSousTotal());
 
-
-                    Row ligneTotal = sheetFactureClient.createRow(indexLigne);
-                    CellStyle cellStyle = workbook.createCellStyle();
-                    ligneTotal.createCell(1).setCellValue(factureClient.getTotal());
-                    Font police = workbook.createFont();
-                    police.setColor(IndexedColors.RED.getIndex());
-                    police.setBold(true);
-                    cellStyle.setFont(police);
-                    ligneTotal.createCell(0).setCellValue("TOTAL DE LA FACTURE :");
-                    ligneTotal.createCell(1).setCellValue(factureClient.getTotal());
-
                     indexLigne++;
                 }
 
+                Row ligneTotal = sheetFactureClient.createRow(indexLigne);
+                CellStyle cellStyle = workbook.createCellStyle();
+                Font police = workbook.createFont();
+                police.setColor(IndexedColors.RED.getIndex());
+                police.setBold(true);
+                cellStyle.setFont(police);
+                cellStyle.setBottomBorderColor(IndexedColors.RED.getIndex());
+                cellStyle.setTopBorderColor(IndexedColors.RED.getIndex());
+                cellStyle.setRightBorderColor((IndexedColors.RED.getIndex()));
+                cellStyle.setLeftBorderColor(IndexedColors.RED.getIndex());
+                cellStyle.setBorderTop(BorderStyle.MEDIUM);
+                cellStyle.setBorderBottom(BorderStyle.MEDIUM);
+                cellStyle.setBorderRight(BorderStyle.MEDIUM);
+                cellStyle.setBorderLeft(BorderStyle.MEDIUM);
+
+                Cell cellLblTotal = ligneTotal.createCell(0);
+                cellLblTotal.setCellValue("TOTAL DE LA FACTURE :");
+                cellLblTotal.setCellStyle(cellStyle);
+
+
+                Cell cellLigneTotal = ligneTotal.createCell(1);
+                cellLigneTotal.setCellValue(factureClient.getTotal());
+                cellLigneTotal.setCellStyle(cellStyle);
+
             }
-
-            workbook.write(response.getOutputStream());
-            workbook.close();
-
         }
 
+        workbook.write(response.getOutputStream());
+        workbook.close();
 
     }
+
+   /* @GetMapping("/facture/{id}/pdf")
+    public void facturePdf(
+            @PathVariable("id") Long idFacture,
+            HttpServletResponse response) throws IOException
+    {
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=\"facture" + idFacture);
+        exportService.exportPDF(response.getOutputStream());
+    }*/
+
 }
