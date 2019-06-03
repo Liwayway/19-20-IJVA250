@@ -251,14 +251,6 @@ public class ExportController {
 
     }
 
-   /* @GetMapping("/facture/{id}/pdf")
-    public void facturePdf(
-            @PathVariable("id") Long idFacture,
-            HttpServletResponse response) throws IOException
-    {
-        response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition", "attachment; filename=\"facture" + idFacture);
-        exportService.exportPDF(response.getOutputStream());
-    }*/
+
 
 }
